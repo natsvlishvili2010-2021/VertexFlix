@@ -5,6 +5,9 @@ import Footer from '@/components/Footer';
 export const metadata = {
   title: 'VertexFlix - Watch Movies & TV Shows',
   description: 'Stream your favorite movies and TV shows for free',
+  verification: {
+    google: 'Nuj4a41GCUU167KjjERsFDRrKreTNeipIfZdd5j9BjA',
+  },
   icons: {
     icon: '/logo.svg',
   },
