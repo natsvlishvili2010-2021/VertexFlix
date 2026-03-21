@@ -1,3 +1,5 @@
+a
+
 ╭─── Claude Code v2.1.74 ──────────────────────────────────────────────────────╮
 │                                                    │ Tips for getting        │
 │                 Welcome back adad!                 │ started                 │
