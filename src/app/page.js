@@ -17,11 +17,9 @@ export default async function HomePage() {
     return [{ results: [] }, { results: [] }, { results: [] }, { results: [] }, { results: [] }, { results: [] }];
   });
 
-  const featured = trending.results?.[Math.floor(Math.random() * Math.min(5, trending.results?.length || 1))];
-
   return (
     <div>
-      <HeroBanner movie={featured} />
+      <HeroBanner movies={trending.results} />
       <div className="-mt-4 sm:-mt-16 relative z-10 space-y-2 pb-8">
         <MovieCarousel title="Trending This Week" items={trending.results} mediaType={null} />
         <MovieCarousel title="Popular Movies" items={popular.results} mediaType="movie" />

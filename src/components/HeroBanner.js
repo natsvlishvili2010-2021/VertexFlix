@@ -1,24 +1,45 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/tmdb';
 
-export default function HeroBanner({ movie }) {
-  if (!movie) return null;
+export default function HeroBanner({ movies = [] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
+  useEffect(() => {
+    if (!movies || movies.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % Math.min(10, movies.length));
+        setIsTransitioning(false);
+      }, 500); // Wait for fade out before changing movie
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [movies]);
+
+  if (!movies || movies.length === 0) return null;
+
+  const movie = movies[currentIndex];
   const title = movie.title || movie.name;
   const backdropUrl = getImageUrl(movie.backdrop_path, 'original');
   const year = (movie.release_date || movie.first_air_date)?.split('-')[0];
   const type = movie.media_type || 'movie';
 
   return (
-    <section className="relative h-[55vh] sm:h-[80vh] flex items-end">
+    <section className="relative h-[55vh] sm:h-[80vh] flex items-end overflow-hidden">
       {/* Backdrop image */}
       {backdropUrl && (
         <img
           src={backdropUrl}
           alt={title}
-          className="absolute inset-0 w-full h-full object-cover object-[center_20%] sm:object-center"
+          className={`absolute inset-0 w-full h-full object-cover object-[center_20%] sm:object-center transition-opacity duration-1000 ${
+            isTransitioning ? 'opacity-0' : 'opacity-100'
+          }`}
         />
       )}
 
@@ -27,7 +48,9 @@ export default function HeroBanner({ movie }) {
       <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/80 to-transparent" />
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-24 w-full">
+      <div className={`relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-24 w-full transition-all duration-700 ${
+        isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
+      }`}>
         <div className="max-w-2xl">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg leading-tight">
             {title}
