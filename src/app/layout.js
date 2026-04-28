@@ -9,6 +9,9 @@ export const metadata = {
   verification: {
     google: 'Nuj4a41GCUU167KjjERsFDRrKreTNeipIfZdd5j9BjA',
   },
+  other: {
+    'google-site-verification': 'Nuj4a41GCUU167KjjERsFDRrKreTNeipIfZdd5j9BjA',
+  },
   icons: {
     icon: '/logo.svg',
   },
@@ -17,9 +20,6 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="google-site-verification" content="Nuj4a41GCUU167KjjERsFDRrKreTNeipIfZdd5j9BjA" />
-      </head>
       <body className="min-h-screen flex flex-col">
         <Providers>
           <Navbar />
