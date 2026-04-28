@@ -7,6 +7,7 @@ import { getMovieDetails, getImageUrl } from '@/lib/tmdb';
 import VideoPlayer from '@/components/VideoPlayer';
 import MovieCarousel from '@/components/MovieCarousel';
 import PersonCard from '@/components/PersonCard';
+import { useAuth } from '@/context/AuthContext';
 
 export default function MovieDetailPage() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export default function MovieDetailPage() {
   const [loading, setLoading] = useState(true);
   const [playerOpen, setPlayerOpen] = useState(false);
   const castRef = useRef(null);
+  const { isFavorited, toggleFavorite } = useAuth();
 
   useEffect(() => {
     if (!id) return;
@@ -51,8 +53,9 @@ export default function MovieDetailPage() {
   const year = movie.release_date?.split('-')[0];
   const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : '';
   const trailer = movie.videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube');
-  const cast = movie.credits?.cast?.slice(0, 12) || [];
+  const cast = movie.credits?.cast?.slice(0, 15) || [];
   const director = movie.credits?.crew?.find((c) => c.job === 'Director');
+  const liked = isFavorited('movie', movie.id);
 
   return (
     <div className="bg-[#050505] min-h-screen text-white">
@@ -197,22 +200,34 @@ export default function MovieDetailPage() {
                     Trailer
                   </button>
                 )}
-              </div>
-              
-              {/* Detailed Metadata Grid */}
-              <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-8 pt-10 border-t border-white/5">
-                <div>
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Released</span>
-                  <span className="text-white font-bold">{movie.release_date}</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Country</span>
-                  <span className="text-white font-bold truncate block">{movie.production_countries?.[0]?.name || 'N/A'}</span>
-                </div>
-                <div className="col-span-2">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Production</span>
-                  <span className="text-white font-bold truncate block">{movie.production_companies?.slice(0, 2).map(c => c.name).join(', ')}</span>
-                </div>
+
+                <button 
+                  onClick={() => {
+                    toggleFavorite({ mediaType: 'movie', item: movie }).catch((err) => {
+                      if (err?.message === 'NOT_AUTHENTICATED') {
+                        alert('Please sign in to save favorites');
+                        return;
+                      }
+                      console.error(err);
+                    });
+                  }}
+                  className={`group flex items-center justify-center w-[56px] h-[56px] rounded-xl transition-all duration-300 border ${
+                    liked 
+                      ? 'bg-accent border-accent text-white shadow-[0_0_20px_rgba(229,9,20,0.3)]' 
+                      : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20'
+                  }`}
+                  title={liked ? "Remove from Favorites" : "Add to Favorites"}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-7 w-7 transition-transform duration-300 ${liked ? 'scale-110' : 'group-hover:scale-110'}`}
+                    fill={liked ? 'currentColor' : 'none'} 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>

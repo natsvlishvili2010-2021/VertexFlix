@@ -22,6 +22,10 @@ export function getTrending(mediaType = 'all', timeWindow = 'week') {
   return tmdbFetch(`/trending/${mediaType}/${timeWindow}`);
 }
 
+export function getTrendingPeople(page = 1, timeWindow = 'week') {
+  return tmdbFetch(`/trending/person/${timeWindow}`, { page });
+}
+
 export function getPopular(mediaType = 'movie', page = 1) {
   return tmdbFetch(`/${mediaType}/popular`, { page });
 }
@@ -68,6 +72,14 @@ export function getSimilarTV(id) {
 
 export function searchMulti(query, page = 1) {
   return tmdbFetch('/search/multi', { query, page });
+}
+
+export function searchMovies(query, page = 1) {
+  return tmdbFetch('/search/movie', { query, page, include_adult: false });
+}
+
+export function searchTV(query, page = 1) {
+  return tmdbFetch('/search/tv', { query, page, include_adult: false });
 }
 
 export function discoverMovies(filters = {}, page = 1) {

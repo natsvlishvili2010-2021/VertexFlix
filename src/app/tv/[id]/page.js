@@ -8,6 +8,7 @@ import VideoPlayer from '@/components/VideoPlayer';
 import EpisodeGrid from '@/components/EpisodeGrid';
 import MovieCarousel from '@/components/MovieCarousel';
 import PersonCard from '@/components/PersonCard';
+import { useAuth } from '@/context/AuthContext';
 
 export default function TVDetailPage() {
   const { id } = useParams();
@@ -16,6 +17,7 @@ export default function TVDetailPage() {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playEpisode, setPlayEpisode] = useState({ season: 1, episode: 1 });
   const castRef = useRef(null);
+  const { isFavorited, toggleFavorite } = useAuth();
 
   useEffect(() => {
     if (!id) return;
@@ -58,8 +60,9 @@ export default function TVDetailPage() {
   const posterUrl = getImageUrl(show.poster_path, 'w500');
   const year = show.first_air_date?.split('-')[0];
   const trailer = show.videos?.results?.find((v) => v.type === 'Trailer' && v.site === 'YouTube');
-  const cast = show.credits?.cast?.slice(0, 12) || [];
+  const cast = show.credits?.cast?.slice(0, 15) || [];
   const creators = show.created_by || [];
+  const liked = isFavorited('tv', show.id);
 
   return (
     <div className="bg-[#050505] min-h-screen text-white">
@@ -206,22 +209,34 @@ export default function TVDetailPage() {
                     Trailer
                   </button>
                 )}
-              </div>
-              
-              {/* Detailed Metadata Grid */}
-              <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-8 pt-10 border-t border-white/5">
-                <div>
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Released</span>
-                  <span className="text-white font-bold">{show.first_air_date}</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Country</span>
-                  <span className="text-white font-bold truncate block">{show.origin_country?.join(', ')}</span>
-                </div>
-                <div className="col-span-2">
-                  <span className="block text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Created By</span>
-                  <span className="text-white font-bold truncate block">{creators.map(c => c.name).join(', ')}</span>
-                </div>
+
+                <button 
+                  onClick={() => {
+                    toggleFavorite({ mediaType: 'tv', item: show }).catch((err) => {
+                      if (err?.message === 'NOT_AUTHENTICATED') {
+                        alert('Please sign in to save favorites');
+                        return;
+                      }
+                      console.error(err);
+                    });
+                  }}
+                  className={`group flex items-center justify-center w-[56px] h-[56px] rounded-xl transition-all duration-300 border ${
+                    liked 
+                      ? 'bg-accent border-accent text-white shadow-[0_0_20px_rgba(229,9,20,0.3)]' 
+                      : 'bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20'
+                  }`}
+                  title={liked ? "Remove from Favorites" : "Add to Favorites"}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className={`h-7 w-7 transition-transform duration-300 ${liked ? 'scale-110' : 'group-hover:scale-110'}`}
+                    fill={liked ? 'currentColor' : 'none'} 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>

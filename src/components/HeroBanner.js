@@ -37,7 +37,7 @@ export default function HeroBanner({ movies = [] }) {
         <img
           src={backdropUrl}
           alt={title}
-          className={`absolute inset-0 w-full h-full object-cover object-[center_20%] sm:object-center transition-opacity duration-1000 ${
+          className={`absolute inset-0 w-full h-full object-cover object-[center_15%] transition-opacity duration-1000 ${
             isTransitioning ? 'opacity-0' : 'opacity-100'
           }`}
         />

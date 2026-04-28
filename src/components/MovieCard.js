@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/tmdb';
+import { useAuth } from '@/context/AuthContext';
 
 export default function MovieCard({ item, mediaType }) {
   const title = item.title || item.name;
@@ -9,6 +10,8 @@ export default function MovieCard({ item, mediaType }) {
   const posterUrl = getImageUrl(item.poster_path, 'w342');
   const type = mediaType || item.media_type || 'movie';
   const href = `/${type}/${item.id}`;
+  const { isFavorited, toggleFavorite } = useAuth();
+  const liked = isFavorited(type, item.id);
 
   return (
     <Link href={href} className="group block shrink-0 w-32 sm:w-44">
@@ -27,7 +30,36 @@ export default function MovieCard({ item, mediaType }) {
         )}
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-          <p className="text-white font-semibold text-sm leading-tight line-clamp-2">{title}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-white font-semibold text-sm leading-tight line-clamp-2 flex-1">{title}</p>
+            {/* Like button - now inside hover overlay next to title */}
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFavorite({ mediaType: type, item }).catch((err) => {
+                  if (err?.message === 'NOT_AUTHENTICATED') {
+                    alert('Please sign in to save favorites');
+                    return;
+                  }
+                  console.error(err);
+                });
+              }}
+              className={`shrink-0 p-1.5 rounded-full transition-all duration-300 ${
+                liked ? 'text-accent' : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4" 
+                fill={liked ? 'currentColor' : 'none'} 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
+          </div>
           <div className="flex items-center gap-2 mt-1">
             {year && <span className="text-white/60 text-xs">{year}</span>}
             <span className="text-yellow-400 text-xs font-medium flex items-center gap-0.5">
