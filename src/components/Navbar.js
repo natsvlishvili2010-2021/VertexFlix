@@ -80,6 +80,19 @@ export default function Navbar() {
                 item.poster_path &&
                 (item.vote_average || 0) > 0,
             )
+            .filter((item) => {
+              try {
+                const raw = localStorage.getItem('unavailable_media');
+                if (!raw) return true;
+                const parsed = JSON.parse(raw);
+                const movieSet = new Set((Array.isArray(parsed?.movie) ? parsed.movie : []).map(String));
+                const tvSet = new Set((Array.isArray(parsed?.tv) ? parsed.tv : []).map(String));
+                if (item.media_type === 'tv') return !tvSet.has(String(item.id));
+                return !movieSet.has(String(item.id));
+              } catch {
+                return true;
+              }
+            })
             .map((item) => {
               const score = getRelevanceScore(item);
               const isExact = getDisplayTitle(item).toLowerCase() === q;

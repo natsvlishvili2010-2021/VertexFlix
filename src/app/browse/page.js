@@ -105,15 +105,45 @@ function BrowseContent() {
       };
 
       if (searchQuery) {
-        const pageNums = Array.from({ length: tmdbPagesToFetch }, (_, i) => tmdbPageStart + i);
-        const pages = await Promise.all(pageNums.map((p) => searchMulti(searchQuery, p)));
-        const firstPage = pages[0];
-        
-        allResults = pages.flatMap((p) => p.results || []).filter((item) => {
-          if (mediaType === 'all') return item.media_type === 'movie' || item.media_type === 'tv';
-          return item.media_type === mediaType || (!item.media_type && mediaType === 'movie');
-        });
-        totalP = firstPage?.total_pages || 1;
+        const first = await searchMulti(searchQuery, 1);
+        totalP = first?.total_pages || 1;
+
+        // If the computed start is beyond what's available, return empty and clamp pages.
+        if (tmdbPageStart > totalP) {
+          allResults = [];
+        } else {
+          const wanted = 42;
+          const matchesMediaType = (item) => {
+            if (mediaType === 'all') return item.media_type === 'movie' || item.media_type === 'tv';
+            return item.media_type === mediaType || (!item.media_type && mediaType === 'movie');
+          };
+
+          let fetchedPages = [];
+          const initialPageNums = Array.from({ length: tmdbPagesToFetch }, (_, i) => tmdbPageStart + i)
+            .filter((p) => p <= totalP);
+          fetchedPages = await Promise.all(initialPageNums.map((p) => searchMulti(searchQuery, p)));
+
+          allResults = fetchedPages.flatMap((p) => p.results || []).filter(matchesMediaType);
+
+          // If filtering (adult/porn/quality/unavailable/vote_average) removes many items,
+          // fetch additional TMDB pages until we can fill the grid or we run out.
+          let nextPage = (initialPageNums[initialPageNums.length - 1] || tmdbPageStart) + 1;
+          const getCurrentUniqueCount = (arr) => {
+            const unique = dedupe(arr).filter((it) => (it.vote_average || 0) > 0);
+            return unique.length;
+          };
+
+          while (getCurrentUniqueCount(allResults) < wanted && nextPage <= totalP) {
+            const more = await searchMulti(searchQuery, nextPage);
+            allResults = allResults.concat((more?.results || []).filter(matchesMediaType));
+            nextPage += 1;
+          }
+
+          // If we've reached the end, clamp totalPages so you don't get empty pages.
+          if (nextPage > totalP) {
+            totalP = Math.min(totalP, nextPage - 1);
+          }
+        }
       } else {
         const apiFilters = {};
         if (filters.genre) apiFilters.with_genres = filters.genre;
@@ -174,7 +204,26 @@ function BrowseContent() {
       }
 
       // We want exactly 7 rows. On desktop (xl) it's 6 columns. 7 * 6 = 42.
-      const unique = dedupe(allResults).filter((it) => (it.vote_average || 0) > 0);
+      const unavailable = (() => {
+        try {
+          const raw = localStorage.getItem('unavailable_media');
+          const parsed = raw ? JSON.parse(raw) : { movie: [], tv: [] };
+          return {
+            movie: new Set((Array.isArray(parsed.movie) ? parsed.movie : []).map(String)),
+            tv: new Set((Array.isArray(parsed.tv) ? parsed.tv : []).map(String)),
+          };
+        } catch {
+          return { movie: new Set(), tv: new Set() };
+        }
+      })();
+
+      const unique = dedupe(allResults)
+        .filter((it) => (it.vote_average || 0) > 0)
+        .filter((it) => {
+          const mt = it.media_type || mediaType;
+          if (mt === 'tv') return !unavailable.tv.has(String(it.id));
+          return !unavailable.movie.has(String(it.id));
+        });
       setItems(unique.slice(0, 42));
       setTotalPages(Math.max(1, Math.ceil(totalP / tmdbPagesToFetch)));
     } catch (err) {

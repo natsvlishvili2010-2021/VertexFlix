@@ -16,8 +16,55 @@ export default function TVDetailPage() {
   const [loading, setLoading] = useState(true);
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playEpisode, setPlayEpisode] = useState({ season: 1, episode: 1 });
+  const [checkingMedia, setCheckingMedia] = useState(false);
   const castRef = useRef(null);
   const { isFavorited, toggleFavorite } = useAuth();
+
+  const markUnavailable = (tmdbId) => {
+    try {
+      const key = 'unavailable_media';
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : { movie: [], tv: [] };
+      const next = {
+        movie: Array.isArray(parsed.movie) ? parsed.movie : [],
+        tv: Array.isArray(parsed.tv) ? parsed.tv : [],
+      };
+      if (!next.tv.includes(String(tmdbId))) next.tv.push(String(tmdbId));
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  };
+
+  const openPlayerIfAvailable = async (season, episode) => {
+    if (!id) return;
+    setCheckingMedia(true);
+    try {
+      const qs = new URLSearchParams({
+        mediaType: 'tv',
+        tmdbId: String(id),
+        season: String(season),
+        episode: String(episode),
+      });
+      const res = await fetch(`/api/media-availability?${qs.toString()}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data?.available) {
+        setPlayEpisode({ season, episode });
+        setPlayerOpen(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        markUnavailable(id);
+        alert('This media is unavailable at the moment.');
+      }
+    } catch {
+      // If we cannot verify, allow playback attempt.
+      setPlayEpisode({ season, episode });
+      setPlayerOpen(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setCheckingMedia(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -29,9 +76,7 @@ export default function TVDetailPage() {
   }, [id]);
 
   const handlePlayEpisode = (season, episode) => {
-    setPlayEpisode({ season, episode });
-    setPlayerOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!checkingMedia) openPlayerIfAvailable(season, episode);
   };
 
   if (loading) {
@@ -106,8 +151,7 @@ export default function TVDetailPage() {
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-center justify-center">
                       <button 
                         onClick={() => {
-                          setPlayerOpen(true);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          if (!checkingMedia) openPlayerIfAvailable(playEpisode.season, playEpisode.episode);
                         }}
                         className="w-16 h-16 bg-accent rounded-full flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-transform duration-300"
                       >
@@ -186,8 +230,7 @@ export default function TVDetailPage() {
               <div className="flex flex-wrap gap-4 items-center">
                 <button
                   onClick={() => {
-                    setPlayerOpen(true);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (!checkingMedia) openPlayerIfAvailable(playEpisode.season, playEpisode.episode);
                   }}
                   className="group relative flex items-center gap-3 bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]"
                 >
