@@ -162,10 +162,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
             </>
           )}
 
-          {/* Decorative footer */}
-          <div className="bg-white/5 p-4 text-center border-t border-white/5">
-            <p className="text-white/30 text-[10px] uppercase tracking-widest">UI Preview Only</p>
-          </div>
         </div>
       </div>
     </div>
